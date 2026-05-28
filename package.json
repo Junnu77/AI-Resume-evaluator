@@ -1,0 +1,15 @@
+{
+  "name": "ai-powered-resume-evaluator",
+  "version": "1.0.0",
+  "description": "AI-Powered Personalized Resume Evaluator",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
