@@ -44,7 +44,9 @@ const UploadResume = () => {
       });
       setResumeId(res.data.resume._id);
     } catch (err) {
-      setError(err.message || 'Failed to upload resume.');
+      // Extract the real server-side error message (not the generic axios 'Network Error')
+      const message = err?.response?.data?.message || err?.message || 'Failed to upload resume. Please try again.';
+      setError(message);
       setFile(null);
     } finally {
       setUploading(false);
@@ -76,7 +78,8 @@ const UploadResume = () => {
       });
       navigate(`/evaluations/${res.data.evaluation._id}`);
     } catch (err) {
-      setError(err.message || 'Failed to evaluate resume.');
+      const message = err?.response?.data?.message || err?.message || 'Failed to evaluate resume. Please try again.';
+      setError(message);
       setEvaluating(false);
     }
   };
@@ -166,7 +169,9 @@ const UploadResume = () => {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{file.name}</p>
-                        <p className="text-xs text-green-600 dark:text-green-500 font-medium">Upload Complete • {(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p className="text-xs text-green-600 dark:text-green-500 font-medium">
+                          Upload Complete &bull; {file.size >= 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : `${(file.size / 1024).toFixed(1)} KB`}
+                        </p>
                       </div>
                     </div>
                     <button 

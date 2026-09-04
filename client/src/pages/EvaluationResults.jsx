@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { 
   Loader2, ArrowLeft, Download, CheckCircle, 
-  XCircle, AlertTriangle, TrendingUp, Briefcase, User, Building, BarChart2
+  XCircle, AlertTriangle, TrendingUp, Briefcase, User, Building, BarChart2,
+  ShieldCheck, ShieldAlert, Zap, Info
 } from 'lucide-react';
 import { 
   RadialBarChart, RadialBar, Legend, Tooltip, ResponsiveContainer 
@@ -104,6 +105,24 @@ const EvaluationResults = () => {
     show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
   };
 
+  // ─── Quality Metrics Helpers ───────────────────────────────────────
+  const qm = evaluation.qualityMetrics;
+  const hasTrustData = qm && qm.overallTrust !== null && qm.overallTrust !== undefined;
+  const trustScore = hasTrustData ? qm.overallTrust : null;
+  const isCached = evaluation.cacheMetadata?.cached;
+
+  const getTrustColor = (score) => {
+    if (score >= 80) return { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', border: 'border-green-200 dark:border-green-800/50' };
+    if (score >= 50) return { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800/50' };
+    return { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', border: 'border-red-200 dark:border-red-800/50' };
+  };
+
+  const getTrustLabel = (score) => {
+    if (score >= 80) return 'High Confidence';
+    if (score >= 50) return 'Moderate Confidence';
+    return 'Low Confidence';
+  };
+
   return (
     <motion.div 
       initial="hidden"
@@ -131,6 +150,16 @@ const EvaluationResults = () => {
               <span className="text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full text-sm">
                 <Building size={14} className="text-primary-500" /> {evaluation.companyName || 'General Application'}
               </span>
+              {isCached && (
+                <span className="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1.5 bg-purple-50 dark:bg-purple-900/20 px-3 py-1 rounded-full text-xs border border-purple-200 dark:border-purple-800/50">
+                  <Zap size={12} /> Served from cache
+                  {evaluation.cacheMetadata?.similarity && (
+                    <span className="opacity-75">
+                      ({(evaluation.cacheMetadata.similarity * 100).toFixed(1)}% match)
+                    </span>
+                  )}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -206,6 +235,105 @@ const EvaluationResults = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* ─── AI Trust Score Card (Eval-on-Eval) ─────────────────── */}
+          {hasTrustData && (
+            <motion.div 
+              variants={itemVariants} 
+              className={`card border shadow-md overflow-hidden ${
+                trustScore >= 80 ? 'border-green-200 dark:border-green-800/40 bg-gradient-to-br from-white to-green-50/30 dark:from-dark-surface dark:to-green-900/10' :
+                trustScore >= 50 ? 'border-amber-200 dark:border-amber-800/40 bg-gradient-to-br from-white to-amber-50/30 dark:from-dark-surface dark:to-amber-900/10' :
+                'border-red-200 dark:border-red-800/40 bg-gradient-to-br from-white to-red-50/30 dark:from-dark-surface dark:to-red-900/10'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <ShieldCheck size={20} className={trustScore >= 80 ? 'text-green-500' : trustScore >= 50 ? 'text-amber-500' : 'text-red-500'} />
+                  AI Trust Score
+                </h3>
+                <div className={`px-3 py-1.5 rounded-xl text-lg font-black ${getTrustColor(trustScore).bg} ${getTrustColor(trustScore).text}`}>
+                  {trustScore}
+                </div>
+              </div>
+
+              <div className={`text-center mb-5 px-4 py-2.5 rounded-xl text-sm font-bold ${getTrustColor(trustScore).bg} ${getTrustColor(trustScore).text} ${getTrustColor(trustScore).border} border`}>
+                {getTrustLabel(trustScore)}
+              </div>
+
+              {/* Faithfulness Metric */}
+              <div className="space-y-3">
+                <div className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
+                  qm.faithfulness?.score 
+                    ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-800/30' 
+                    : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-800/30'
+                }`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    qm.faithfulness?.score 
+                      ? 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400' 
+                      : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
+                  }`}>
+                    {qm.faithfulness?.score ? <CheckCircle size={15} /> : <XCircle size={15} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-sm text-slate-800 dark:text-white">Faithfulness</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        qm.faithfulness?.score 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {qm.faithfulness?.score ? 'PASS' : 'FLAGGED'}
+                      </span>
+                    </div>
+                    {qm.faithfulness?.reasoning && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed line-clamp-3">
+                        {qm.faithfulness.reasoning}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Relevance Metric */}
+                <div className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
+                  qm.relevance?.score 
+                    ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-800/30' 
+                    : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-800/30'
+                }`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    qm.relevance?.score 
+                      ? 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400' 
+                      : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
+                  }`}>
+                    {qm.relevance?.score ? <CheckCircle size={15} /> : <XCircle size={15} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-sm text-slate-800 dark:text-white">Relevance</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        qm.relevance?.score 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {qm.relevance?.score ? 'PASS' : 'FLAGGED'}
+                      </span>
+                    </div>
+                    {qm.relevance?.reasoning && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed line-clamp-3">
+                        {qm.relevance.reasoning}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                <Info size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
+                  Trust score is generated by a secondary AI judge that verifies the primary evaluation for hallucinations and relevance to the target role.
+                </p>
+              </div>
+            </motion.div>
+          )}
           
           <motion.div variants={itemVariants} className="card border border-red-100 dark:border-red-900/30 bg-gradient-to-br from-white to-red-50/30 dark:from-dark-surface dark:to-red-900/10">
             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-5">

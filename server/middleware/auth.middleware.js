@@ -18,6 +18,12 @@ const protect = async (req, res, next) => {
       // Get user from token, excluding password
       req.user = await User.findById(decoded.id).select('-password');
 
+      // User may have been deleted or DB restarted (e.g. in-memory MongoDB)
+      if (!req.user) {
+        res.status(401);
+        return next(new Error('Not authorized, user no longer exists. Please log in again.'));
+      }
+
       next();
     } catch (error) {
       console.error('Auth error:', error);

@@ -46,6 +46,21 @@ const evaluationSchema = new mongoose.Schema({
     skills: String,
     projects: String,
     formatting: String
+  },
+  qualityMetrics: {
+    faithfulness: {
+      score: { type: Boolean, default: null },
+      reasoning: { type: String, default: '' },
+    },
+    relevance: {
+      score: { type: Boolean, default: null },
+      reasoning: { type: String, default: '' },
+    },
+    overallTrust: { type: Number, default: null },
+  },
+  cacheMetadata: {
+    cached: { type: Boolean, default: false },
+    similarity: { type: Number, default: null },
   }
 }, { timestamps: true });
 

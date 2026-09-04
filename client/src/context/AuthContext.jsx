@@ -9,13 +9,39 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from local storage or check token on mount
+  // On mount: load user from localStorage, then verify token is still valid.
+  // This catches the case where the in-memory MongoDB restarted and the JWT
+  // references a user that no longer exists.
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const validateSession = async () => {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(storedUser);
+        // Optimistically set user so the UI loads immediately
+        setUser(parsed);
+
+        // Validate token with server in background
+        await api.get('/auth/me');
+        // Token is valid — keep user state as-is
+      } catch (err) {
+        // 401 = token invalid or user gone (e.g. in-memory DB restart)
+        if (err?.response?.status === 401) {
+          console.warn('Session expired or invalid — clearing local auth state.');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+        // Other errors (network down, etc.) — keep user state to allow offline access
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateSession();
   }, []);
 
   const register = async (userData) => {
