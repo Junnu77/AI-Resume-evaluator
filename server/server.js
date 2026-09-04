@@ -10,8 +10,21 @@ dotenv.config();
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://ai-resume-evaluator-sigma.vercel.app', // Deployed frontend
+  'http://localhost:5173', // Vite default port (local dev)
+].filter(Boolean);
+
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: origin ${origin} not allowed`));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -22,7 +35,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.get('/', (req, res) => {
-  res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173');
+  res.redirect(process.env.FRONTEND_URL || 'https://ai-resume-evaluator-sigma.vercel.app');
 });
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/resumes', require('./routes/resume.routes'));

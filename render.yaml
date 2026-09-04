@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ai-resume-evaluator-api
+    runtime: node
+    buildCommand: npm install && cd server && npm install
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false

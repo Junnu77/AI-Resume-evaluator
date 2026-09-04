@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://ai-resume-evaluator-remw.onrender.com/api',
   timeout: 120000, // 2-minute timeout to allow for LLM evaluation calls
 });
 
