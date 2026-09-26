@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AI-Powered Personalized Resume Evaluator",
   "main": "server/server.js",
-  "scripts": {
+  "scripts":  {
     "start": "node server/server.js",
     "build": "cd server && npm install",
     "server": "cd server && npm run dev",
